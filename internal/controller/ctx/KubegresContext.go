@@ -25,7 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	"reactive-tech.io/kubegres/api/v1"
+	"k8s.io/apimachinery/pkg/types"
+	v1 "reactive-tech.io/kubegres/api/v1"
 	"reactive-tech.io/kubegres/internal/controller/ctx/log"
 	"reactive-tech.io/kubegres/internal/controller/ctx/status"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,6 +63,14 @@ func (r *KubegresContext) GetServiceResourceName(isPrimary bool) string {
 		return r.Kubegres.Name
 	}
 	return r.Kubegres.Name + "-replica"
+}
+
+// CreateNamespacedName creates a NamespacedName using the Kubegres namespace
+func (r *KubegresContext) CreateNamespacedName(name string) types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: r.Kubegres.Namespace,
+		Name:      name,
+	}
 }
 
 func (r *KubegresContext) GetStatefulSetResourceName(instanceIndex int32) string {

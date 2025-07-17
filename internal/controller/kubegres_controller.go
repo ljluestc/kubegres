@@ -168,3 +168,11 @@ func (r *KubegresReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&core.Service{}).
 		Complete(r)
 }
+
+// NewKubegresController creates a new controller instance
+func NewKubegresController(c client.Client, ctx context.Context, req ctrl.Request) interface{} {
+	return &KubegresReconciler{
+		Client: c,
+		Logger: ctrl.Log.WithName("controllers").WithName("Kubegres"),
+	}
+}

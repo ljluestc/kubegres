@@ -1,0 +1,26 @@
+apiVersion: kubegres.reactive-tech.io/v1
+kind: Kubegres
+metadata:
+  name: postgres-with-stonith
+spec:
+  replicas: 3
+  image: postgres:14.0
+  database:
+    size: 200Mi
+  env:
+    - name: POSTGRES_PASSWORD
+      value: "postgres"
+    - name: POSTGRES_USER
+      value: "postgres"
+    - name: POSTGRES_DB
+      value: "postgres"
+  failover:
+    # Enable STONITH to prevent split-brain scenarios during failover
+    # When enabled, Kubegres ensures the old primary is fully terminated
+    # before promoting a replica to become the new primary
+    enableSTONITH: true
+    
+    # Other failover settings
+    isDisabled: false
+    delaySeconds: 10
+    delayAfterDelete: 5

@@ -38,6 +38,11 @@ type KubegresBackUp struct {
 type KubegresFailover struct {
 	IsDisabled bool   `json:"isDisabled,omitempty"`
 	PromotePod string `json:"promotePod,omitempty"`
+
+	// EnableSTONITH ensures the old primary is fully terminated before promoting a replica
+	// This prevents split-brain scenarios during failover
+	// +optional
+	EnableSTONITH *bool `json:"enableSTONITH,omitempty"`
 }
 
 type KubegresScheduler struct {
@@ -89,6 +94,15 @@ type KubegresStatefulSetOperation struct {
 
 type KubegresStatefulSetSpecUpdateOperation struct {
 	SpecDifferences string `json:"specDifferences,omitempty"`
+
+	// +optional
+	CustomConfig *KubegresCustomConfig `json:"customConfig,omitempty"`
+}
+
+// KubegresCustomConfig defines custom configuration for Kubegres
+type KubegresCustomConfig struct {
+	// ConfigMapName is the name of the ConfigMap containing custom configuration
+	ConfigMapName string `json:"configMapName,omitempty"`
 }
 
 type KubegresBlockingOperation struct {

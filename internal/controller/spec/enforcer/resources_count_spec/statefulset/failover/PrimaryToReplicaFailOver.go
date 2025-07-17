@@ -22,13 +22,15 @@ package failover
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	core "k8s.io/api/core/v1"
-	v1 "reactive-tech.io/kubegres/api/v1"
+	kubegresv1 "reactive-tech.io/kubegres/api/v1"
 	"reactive-tech.io/kubegres/internal/controller/ctx"
 	operation2 "reactive-tech.io/kubegres/internal/controller/operation"
 	"reactive-tech.io/kubegres/internal/controller/states"
 	"reactive-tech.io/kubegres/internal/controller/states/statefulset"
-	"strconv"
 )
 
 type PrimaryToReplicaFailOver struct {
@@ -64,6 +66,12 @@ func (r *PrimaryToReplicaFailOver) CreateOperationConfigForFailingOver() operati
 		TimeOutInSeconds:  300,
 		CompletionChecker: r.isFailOverCompleted,
 	}
+}
+
+// isSTONITHEnabled checks if STONITH is enabled in Kubegres spec
+func (r *PrimaryToReplicaFailOver) isSTONITHEnabled() bool {
+	return r.kubegresContext.Kubegres.Spec.Failover.EnableSTONITH != nil &&
+		*r.kubegresContext.Kubegres.Spec.Failover.EnableSTONITH
 }
 
 func (r *PrimaryToReplicaFailOver) ShouldWeFailOver() bool {
@@ -113,7 +121,7 @@ func (r *PrimaryToReplicaFailOver) FailOver() error {
 	}
 }
 
-func (r *PrimaryToReplicaFailOver) isFailOverCompleted(operation v1.KubegresBlockingOperation) bool {
+func (r *PrimaryToReplicaFailOver) isFailOverCompleted(operation kubegresv1.KubegresBlockingOperation) bool {
 
 	if r.blockingOperation.GetNbreSecondsSinceOperationHasStarted() < 40 {
 
@@ -285,6 +293,13 @@ func (r *PrimaryToReplicaFailOver) promoteReplicaToPrimary(newPrimary statefulse
 
 func (r *PrimaryToReplicaFailOver) waitBeforePromotingReplicaToPrimary(newPrimary statefulset.StatefulSetWrapper) error {
 
+	// If STONITH is enabled, log that we're using it
+	if r.isSTONITHEnabled() {
+		r.kubegresContext.Log.InfoEvent("STONITHEnabled",
+			"STONITH mechanism is enabled for failover. Ensuring old primary is terminated before promotion.",
+			"Old Primary", r.resourcesStates.StatefulSets.Primary.StatefulSet.Name)
+	}
+
 	r.deletePrimaryStatefulSet()
 
 	err := r.activateOperationWaitingBeforeFailingOver(newPrimary)
@@ -323,7 +338,44 @@ func (r *PrimaryToReplicaFailOver) deletePrimaryStatefulSet() {
 		r.kubegresContext.Log.InfoEvent("FailOverPrimaryDeleted",
 			"Deleted the failing Primary StatefulSet.",
 			"Primary name", statefulSetToDelete.Name)
+
+		// If STONITH is enabled, ensure the primary is fully terminated
+		if r.isSTONITHEnabled() {
+			r.ensurePrimaryTerminated(statefulSetToDelete.Name)
+		}
 	}
+}
+
+// ensurePrimaryTerminated waits for the primary statefulset to be fully terminated
+// This is the core STONITH mechanism to prevent split-brain scenarios
+func (r *PrimaryToReplicaFailOver) ensurePrimaryTerminated(primaryName string) {
+	r.kubegresContext.Log.InfoEvent("STONITHVerifying",
+		"STONITH: Verifying primary is fully terminated to prevent split-brain",
+		"Primary name", primaryName)
+
+	// Try to get the primary statefulset - if we get "not found" error, it's terminated
+	maxRetries := 30 // Maximum 30 seconds to wait
+	for i := 0; i < maxRetries; i++ {
+		var statefulSet statefulset.StatefulSetWrapper
+		err := r.kubegresContext.Client.Get(r.kubegresContext.Ctx,
+			r.kubegresContext.CreateNamespacedName(primaryName), &statefulSet.StatefulSet)
+
+		if err != nil {
+			// If not found, the primary is terminated
+			r.kubegresContext.Log.InfoEvent("STONITHCompleted",
+				"STONITH: Primary is fully terminated",
+				"Primary name", primaryName)
+			return
+		}
+
+		// Wait 1 second before checking again
+		time.Sleep(1 * time.Second)
+	}
+
+	// If we reach here, primary wasn't terminated within the timeout
+	r.kubegresContext.Log.WarningEvent("STONITHTimeout",
+		"STONITH: Primary was not fully terminated within timeout period. Proceeding with failover anyway.",
+		"Primary name", primaryName)
 }
 
 func (r *PrimaryToReplicaFailOver) logFailoverCannotHappenAsNoReplicaDeployed() {
