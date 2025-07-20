@@ -76,12 +76,12 @@ func CreateTestEnvironment(client *util.K8sClientType, resources TestResources) 
 			return err
 		}
 	}
-	
+
 	// Create Kubegres instance
 	if err := client.Client.Create(client.Ctx, &resources.Kubegres); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -91,13 +91,13 @@ func CleanupTestEnvironment(client *util.K8sClientType, resources TestResources)
 	if err := client.Client.Delete(client.Ctx, &resources.Kubegres); err != nil {
 		return err
 	}
-	
+
 	// Delete ConfigMaps
 	for _, cm := range resources.ConfigMaps {
 		if err := client.Client.Delete(client.Ctx, &cm); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }

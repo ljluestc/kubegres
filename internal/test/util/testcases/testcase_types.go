@@ -18,14 +18,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package test
+package testcases
 
-import (
-	"testing"
-)
-
-// TestInit is a simple test to verify initialization is working
-func TestInit(t *testing.T) {
-	// Skip this test for now as it's just a placeholder
-	t.Skip("This is a placeholder test")
-}
+// Import types from util package instead of defining them here

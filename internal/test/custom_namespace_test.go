@@ -25,11 +25,14 @@ import (
 	. "github.com/onsi/gomega"
 	v12 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	postgresv1 "reactive-tech.io/kubegres/api/v1"
 	resourceConfigs2 "reactive-tech.io/kubegres/internal/test/resourceConfigs"
 	util2 "reactive-tech.io/kubegres/internal/test/util"
 	"reactive-tech.io/kubegres/internal/test/util/testcases"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	_ "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"time"
 )
 
@@ -38,6 +41,7 @@ const customNamespace = "toto"
 var _ = Describe("Creating Kubegres with a custom namespace", func() {
 
 	var test = CustomNamespaceTest{}
+	var k8sClientTest client.Client
 
 	BeforeEach(func() {
 		//Skip("Temporarily skipping test")
@@ -184,7 +188,7 @@ func (r *CustomNamespaceTest) thenErrorEventShouldBeLogged() {
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
+		return r.dbQueryTestCases.CheckEventExist(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }

@@ -24,22 +24,22 @@ import (
 	. "github.com/onsi/gomega"
 	"log"
 	"reactive-tech.io/kubegres/internal/test/resourceConfigs"
-	util2 "reactive-tech.io/kubegres/internal/test/util"
+	"reactive-tech.io/kubegres/internal/test/util"
 )
 
 type DbQueryTestCases struct {
-	connectionPrimaryDb util2.DbConnectionDbUtil
-	connectionReplicaDb util2.DbConnectionDbUtil
+	connectionPrimaryDb util.DbConnectionDbUtil
+	connectionReplicaDb util.DbConnectionDbUtil
 }
 
-func InitDbQueryTestCases(resourceCreator util2.TestResourceCreator, kubegresName string) DbQueryTestCases {
+func InitDbQueryTestCases(resourceCreator util.TestResourceCreator, kubegresName string) DbQueryTestCases {
 	return InitDbQueryTestCasesWithNodePorts(resourceCreator, kubegresName, resourceConfigs.ServiceToSqlQueryPrimaryDbNodePort, resourceConfigs.ServiceToSqlQueryReplicaDbNodePort)
 }
 
-func InitDbQueryTestCasesWithNodePorts(resourceCreator util2.TestResourceCreator, kubegresName string, primaryServiceNodePort, replicaServiceNodePort int) DbQueryTestCases {
+func InitDbQueryTestCasesWithNodePorts(resourceCreator util.TestResourceCreator, kubegresName string, primaryServiceNodePort, replicaServiceNodePort int) DbQueryTestCases {
 	return DbQueryTestCases{
-		connectionPrimaryDb: util2.InitDbConnectionDbUtil(resourceCreator, kubegresName, primaryServiceNodePort, true),
-		connectionReplicaDb: util2.InitDbConnectionDbUtil(resourceCreator, kubegresName, replicaServiceNodePort, false),
+		connectionPrimaryDb: util.InitDbConnectionDbUtil(resourceCreator, kubegresName, primaryServiceNodePort, true),
+		connectionReplicaDb: util.InitDbConnectionDbUtil(resourceCreator, kubegresName, replicaServiceNodePort, false),
 	}
 }
 
@@ -76,11 +76,15 @@ func (r *DbQueryTestCases) ThenWeCanSqlQueryReplicaDb() {
 	}, resourceConfigs.TestTimeout, resourceConfigs.TestRetryInterval).Should(BeTrue())
 }
 
-func (r *DbQueryTestCases) isLastInsertedUserInDb(users []util2.AccountUser) bool {
+func (r *DbQueryTestCases) isLastInsertedUserInDb(users []util.AccountUser) bool {
 	for _, user := range users {
 		if user.UserId == r.connectionPrimaryDb.LastInsertedUserId {
 			return true
 		}
 	}
+	return false
+}
+
+func (r *DbQueryTestCases) CheckEventExist(event util.EventRecord) bool {
 	return false
 }

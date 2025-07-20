@@ -26,6 +26,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	"log"
 	postgresv1 "reactive-tech.io/kubegres/api/v1"
 	"reactive-tech.io/kubegres/internal/controller/ctx"
@@ -35,6 +36,13 @@ import (
 	"reactive-tech.io/kubegres/internal/test/util/testcases"
 	"time"
 )
+
+type SpecCustomConfigTest struct {
+	resourceCreator   util2.TestResourceCreator
+	resourceRetriever util2.TestResourceRetriever
+	dbQueryTestCases  testcases.DbQueryTestCases
+	eventRecorder     record.EventRecorder
+}
 
 var _ = Describe("Setting Kubegres specs 'customConfig'", func() {
 
@@ -47,6 +55,7 @@ var _ = Describe("Setting Kubegres specs 'customConfig'", func() {
 		test.resourceRetriever = util2.CreateTestResourceRetriever(k8sClientTest, namespace)
 		test.resourceCreator = util2.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
 		test.dbQueryTestCases = testcases.InitDbQueryTestCases(test.resourceCreator, resourceConfigs2.KubegresResourceName)
+		test.eventRecorder = util2.GetTestEventRecorder(util2.K8sClient)
 		test.resourceCreator.CreateBackUpPvc()
 		test.resourceCreator.CreateConfigMapEmpty()
 		test.resourceCreator.CreateConfigMapWithAllConfigs()
@@ -303,6 +312,7 @@ type SpecCustomConfigTest struct {
 	dbQueryTestCases  testcases.DbQueryTestCases
 	resourceCreator   util2.TestResourceCreator
 	resourceRetriever util2.TestResourceRetriever
+	eventRecorder     *util2.TestEventRecorder
 }
 
 func (r *SpecCustomConfigTest) givenNewKubegresSpecIsSetTo(customConfig string, specNbreReplicas int32) {
@@ -355,7 +365,7 @@ func (r *SpecCustomConfigTest) thenErrorEventShouldBeLogged() {
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
+		return r.resourceRetriever.CheckEventExists(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }

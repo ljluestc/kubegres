@@ -27,6 +27,10 @@ type KubegresDatabase struct {
 	Size             string  `json:"size,omitempty"`
 	VolumeMount      string  `json:"volumeMount,omitempty"`
 	StorageClassName *string `json:"storageClassName,omitempty"`
+	// Folder specifies a subdirectory within VolumeMount to be used as PGDATA
+	// If not specified, PGDATA will be set to VolumeMount directly
+	// +optional
+	Folder string `json:"folder,omitempty"`
 }
 
 type KubegresBackUp struct {
@@ -90,6 +94,7 @@ type KubegresSpec struct {
 type KubegresStatefulSetOperation struct {
 	InstanceIndex int32  `json:"instanceIndex,omitempty"`
 	Name          string `json:"name,omitempty"`
+	Folder        string `json:"folder,omitempty"`
 }
 
 type KubegresStatefulSetSpecUpdateOperation struct {
@@ -121,6 +126,12 @@ type KubegresStatus struct {
 	BlockingOperation         KubegresBlockingOperation `json:"blockingOperation,omitempty"`
 	PreviousBlockingOperation KubegresBlockingOperation `json:"previousBlockingOperation,omitempty"`
 	EnforcedReplicas          int32                     `json:"enforcedReplicas,omitempty"`
+	Folder                    string                    `json:"folder,omitempty"`
+}
+
+// Config represents Kubegres configuration
+type Config struct {
+	ConfigMapName string `json:"configMapName,omitempty"`
 }
 
 // ----------------------- RESOURCE ---------------------------------------

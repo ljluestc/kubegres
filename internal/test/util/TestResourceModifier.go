@@ -8,17 +8,30 @@ import (
 type TestResourceModifier struct {
 }
 
-func (r *TestResourceModifier) AppendAnnotation(annotationKey, annotationValue string, kubegresResource *postgresv1.Kubegres) {
-
-	if kubegresResource.Annotations == nil {
-		kubegresResource.Annotations = make(map[string]string)
-	}
-
-	kubegresResource.Annotations[annotationKey] = annotationValue
+// CreateTestResourceModifier creates a new TestResourceModifier
+func CreateTestResourceModifier(client K8sClientType) TestResourceModifier {
+	return TestResourceModifier{}
 }
 
-func (r *TestResourceModifier) AppendEnvVar(envVarName, envVarVal string, kubegresResource *postgresv1.Kubegres) {
+// NewTestResourceModifier creates a new TestResourceModifier (alias for CreateTestResourceModifier)
+func NewTestResourceModifier(client K8sClientType) TestResourceModifier {
+	return TestResourceModifier{}
+}
 
+// CreateResourceModifier creates a new TestResourceModifier (alias for NewTestResourceModifier)
+func CreateResourceModifier(client K8sClientType) TestResourceModifier {
+	return NewTestResourceModifier(client)
+}
+
+func (r TestResourceModifier) AppendAnnotation(annotationKey, annotationValue string, kubegresResource *postgresv1.Kubegres) {
+	if kubegresResource.ObjectMeta.Annotations == nil {
+		kubegresResource.ObjectMeta.Annotations = make(map[string]string)
+	}
+
+	kubegresResource.ObjectMeta.Annotations[annotationKey] = annotationValue
+}
+
+func (r TestResourceModifier) AppendEnvVar(envVarName, envVarVal string, kubegresResource *postgresv1.Kubegres) {
 	envVar := v12.EnvVar{
 		Name:  envVarName,
 		Value: envVarVal,
@@ -27,8 +40,7 @@ func (r *TestResourceModifier) AppendEnvVar(envVarName, envVarVal string, kubegr
 	kubegresResource.Spec.Env = append(kubegresResource.Spec.Env, envVar)
 }
 
-func (r *TestResourceModifier) AppendEnvVarFromSecretKey(envVarName, envVarSecretKeyValueName string, kubegresResource *postgresv1.Kubegres) {
-
+func (r TestResourceModifier) AppendEnvVarFromSecretKey(envVarName, envVarSecretKeyValueName string, kubegresResource *postgresv1.Kubegres) {
 	envVar := v12.EnvVar{
 		Name: envVarName,
 		ValueFrom: &v12.EnvVarSource{

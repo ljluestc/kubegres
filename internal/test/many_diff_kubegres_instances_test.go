@@ -28,7 +28,7 @@ import (
 	"log"
 	postgresv1 "reactive-tech.io/kubegres/api/v1"
 	resourceConfigs2 "reactive-tech.io/kubegres/internal/test/resourceConfigs"
-	util2 "reactive-tech.io/kubegres/internal/test/util"
+	util "reactive-tech.io/kubegres/internal/test/util"
 	"reactive-tech.io/kubegres/internal/test/util/testcases"
 	"time"
 )
@@ -46,8 +46,9 @@ var _ = Describe("Testing when there are 2 different Kubegres instances running 
 		//Skip("Temporarily skipping test")
 
 		namespace := resourceConfigs2.DefaultNamespace
-		test.resourceRetriever = util2.CreateTestResourceRetriever(k8sClientTest, namespace)
-		test.resourceCreator = util2.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
+		test.resourceRetriever = util.CreateTestResourceRetriever(k8sClientTest, namespace)
+		test.resourceCreator = util.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
+		test.eventRecorder = util.CreateTestEventRecorder(k8sClientTest, namespace)
 		test.kubegresOneDbQueryTestCases = testcases.InitDbQueryTestCasesWithNodePorts(test.resourceCreator, kubegresOne, resourceConfigs2.ServiceToSqlQueryPrimaryDbNodePort, resourceConfigs2.ServiceToSqlQueryReplicaDbNodePort)
 		test.kubegresTwoDbQueryTestCases = testcases.InitDbQueryTestCasesWithNodePorts(test.resourceCreator, kubegresTwo, resourceConfigs2.ServiceToSqlQueryPrimaryDbNodePort+2, resourceConfigs2.ServiceToSqlQueryReplicaDbNodePort+2)
 	})
@@ -90,8 +91,9 @@ var _ = Describe("Testing when there are 2 different Kubegres instances running 
 type ManyDifferentKubegresInstancesTest struct {
 	kubegresOneDbQueryTestCases testcases.DbQueryTestCases
 	kubegresTwoDbQueryTestCases testcases.DbQueryTestCases
-	resourceCreator             util2.TestResourceCreator
-	resourceRetriever           util2.TestResourceRetriever
+	resourceCreator             util.TestResourceCreator
+	resourceRetriever           util.TestResourceRetriever
+	eventRecorder               *util.TestEventRecorder
 }
 
 func (r *ManyDifferentKubegresInstancesTest) givenNewKubegresSpecIsSetTo(kubegresName string, specNbreReplicas int32) *postgresv1.Kubegres {
@@ -123,7 +125,7 @@ func (r *ManyDifferentKubegresInstancesTest) whenKubernetesIsUpdated(kubegresRes
 }
 
 func (r *ManyDifferentKubegresInstancesTest) thenErrorEventShouldBeLogged() {
-	expectedErrorEvent := util2.EventRecord{
+	expectedErrorEvent := util.EventRecord{
 		Eventtype: v12.EventTypeWarning,
 		Reason:    "SpecCheckErr",
 		Message:   "In the Resources Spec the value of 'spec.replicas' is undefined. Please set a value otherwise this operator cannot work correctly.",
@@ -133,8 +135,7 @@ func (r *ManyDifferentKubegresInstancesTest) thenErrorEventShouldBeLogged() {
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
-
+		return r.eventRecorder.CheckEventExist(expectedErrorEvent)
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }
 

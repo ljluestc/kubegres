@@ -46,8 +46,8 @@ var _ = Describe("Creating Kubegres with custom annotations", func() {
 		//Skip("Temporarily skipping test")
 
 		namespace := resourceConfigs2.DefaultNamespace
-		test.resourceRetriever = util2.CreateTestResourceRetriever(k8sClientTest, namespace)
-		test.resourceCreator = util2.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
+		test.resourceRetriever = util2.CreateTestResourceRetriever(util2.K8sClient.Client, namespace)
+		test.resourceCreator = util2.CreateTestResourceCreator(util2.K8sClient.Client, test.resourceRetriever, namespace)
 		test.dbQueryTestCases = testcases.InitDbQueryTestCases(test.resourceCreator, resourceConfigs2.KubegresResourceName)
 		test.kubegresResource = resourceConfigs2.LoadKubegresYaml()
 	})

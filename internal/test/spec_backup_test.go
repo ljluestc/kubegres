@@ -52,6 +52,8 @@ var _ = Describe("Setting Kubegres specs 'backup.*'", func() {
 		test.resourceRetriever = util2.CreateTestResourceRetriever(k8sClientTest, namespace)
 		test.resourceCreator = util2.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
 		test.dbQueryTestCases = testcases.InitDbQueryTestCases(test.resourceCreator, resourceConfigs2.KubegresResourceName)
+		test.eventRecorder = util2.GetTestEventRecorder(util2.K8sClient)
+		test.resourceModifier = util2.TestResourceModifier{}
 		test.resourceCreator.CreateConfigMapWithBackupDatabaseScript()
 		test.resourceCreator.CreateConfigMapWithPgHbaConf()
 		test.resourceCreator.CreateBackUpPvc()
@@ -134,7 +136,7 @@ var _ = Describe("Setting Kubegres specs 'backup.*'", func() {
 		})
 	})
 
-	Context("GIVEN new Kubegres is created with spec 'backup.schedule' AND 'backup.volumeMount' AND 'backup.pvcName' BUT the given PVC is NOT deployed'", func() {
+	Context("GIVEN new Kubegres is created with spec 'backup.schedule' AND 'backup.volumeMount' AND 'backup.pvcName' BUT the given PVC is NOT deployed", func() {
 
 		It("THEN an error event should be logged saying PVC is NOT deployed", func() {
 
@@ -269,6 +271,7 @@ type SpecBackUpTest struct {
 	dbQueryTestCases                testcases.DbQueryTestCases
 	resourceCreator                 util2.TestResourceCreator
 	resourceRetriever               util2.TestResourceRetriever
+	eventRecorder                   *util2.TestEventRecorder
 	resourceModifier                util2.TestResourceModifier
 }
 
@@ -329,7 +332,7 @@ func (r *SpecBackUpTest) thenErrorEventShouldBeLogged(specName string) {
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
+		return r.eventRecorder.CheckEventExist(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }
@@ -345,7 +348,7 @@ func (r *SpecBackUpTest) thenErrorEventSayingPvcIsNotDeployed() {
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
+		return r.eventRecorder.CheckEventExist(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }

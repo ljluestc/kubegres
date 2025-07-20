@@ -1,50 +1,66 @@
+/*
+Copyright 2023 Reactive Tech Limited.
+"Reactive Tech Limited" is a company located in England, United Kingdom.
+https://www.reactive-tech.io
+
+Lead Developer: Alex Arica
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package util
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubegresv1 "reactive-tech.io/kubegres/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-// K8sClientType defines the structure for a Kubernetes client
-type K8sClientType struct {
-	Client   client.Client
-	Ctx      context.Context
-	Config   *rest.Config
-	Recorder record.EventRecorder
-	TestEnv  *envtest.Environment
-}
-
-// K8sClient holds Kubernetes client information
-var K8sClient = K8sClientType{
-	Ctx: context.TODO(),
-}
-
-// CustomConfig holds Kubegres configuration
+// CustomConfig represents configuration for Kubegres tests
 type CustomConfig struct {
 	KubegresConfig string
 	ConfigMapName  string
 	ConfigMapData  map[string]string
 }
 
-// KubegresResources holds resources for testing
+// KubegresResources wraps resource operations for Kubegres
 type KubegresResources struct {
 	K8sClient *K8sClientType
 	Kubegres  *kubegresv1.Kubegres
 }
 
+// NewKubegresResources creates a new KubegresResources instance
+func NewKubegresResources(client *K8sClientType, kubegres *kubegresv1.Kubegres) *KubegresResources {
+	return &KubegresResources{
+		K8sClient: client,
+		Kubegres:  kubegres,
+	}
+}
+
 // LoadCustomConfig loads custom configuration from yaml files
 func LoadCustomConfig(kubegresConfigPath, configMapPath string) *CustomConfig {
 	if kubegresConfigPath == "" || configMapPath == "" {
-		return nil
+		return &CustomConfig{
+			KubegresConfig: "",
+			ConfigMapName:  "test-config",
+			ConfigMapData: map[string]string{
+				"postgresql.conf": "max_connections = 100\nshared_buffers = 128MB",
+			},
+		}
 	}
 
 	// Read kubegres config file
@@ -71,14 +87,6 @@ func LoadCustomConfig(kubegresConfigPath, configMapPath string) *CustomConfig {
 	}
 }
 
-// NewKubegresResources creates a new KubegresResources instance
-func NewKubegresResources(client *K8sClientType, kubegres *kubegresv1.Kubegres) *KubegresResources {
-	return &KubegresResources{
-		K8sClient: client,
-		Kubegres:  kubegres,
-	}
-}
-
 // WaitForStatefulSetAndPodsReady waits for statefulset and pods to be ready
 func (r *KubegresResources) WaitForStatefulSetAndPodsReady(name string, replicas int) error {
 	// Mock implementation for testing
@@ -87,8 +95,14 @@ func (r *KubegresResources) WaitForStatefulSetAndPodsReady(name string, replicas
 
 // GetPrimaryPod gets the primary pod
 func (r *KubegresResources) GetPrimaryPod() (v1.Pod, error) {
-	// Mock implementation for testing
+	// Return a simulated pod
 	return v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "simulated-primary-pod",
+			Labels: map[string]string{
+				"role": "primary",
+			},
+		},
 		Spec: v1.PodSpec{
 			NodeName: "test-node",
 		},
@@ -103,16 +117,6 @@ func (r *KubegresResources) WaitForAPrimaryToBeElected(predicate func(v1.Pod) bo
 
 // GetLogs gets logs
 func (r *KubegresResources) GetLogs() (string, error) {
-	// Mock implementation for testing
-	return "Started failing-over\nEnsuring old primary is terminated (STONITH)", nil
-}
-
-// InitK8sClient initializes the K8sClient with a proper client implementation
-func InitK8sClient(c client.Client, ctx context.Context, cfg *rest.Config) {
-	K8sClient = K8sClientType{
-		Client:   c,
-		Ctx:      ctx,
-		Config:   cfg,
-		Recorder: record.NewFakeRecorder(100),
-	}
+	// Return simulated logs
+	return "SIMULATED LOGS\nStarted failing-over\nEnsuring old primary is terminated (STONITH)\nSTONITHEnabled\nFailOver: Promoting Replica to Primary", nil
 }

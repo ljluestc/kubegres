@@ -30,8 +30,12 @@ import (
 
 // TestSetup is a simple test function to verify the test setup is working
 func TestSetup(t *testing.T) {
-	// Skip this test for now as it's just a placeholder
-	t.Skip("This is a placeholder test to verify the test setup")
+	// Verify the client was set up properly
+	if util.K8sClient.Client == nil {
+		t.Fatal("K8sClient.Client is nil")
+	}
+
+	t.Log("Test setup is working correctly")
 }
 
 // Helper function to setup a test environment for Kubegres tests

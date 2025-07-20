@@ -46,6 +46,9 @@ var _ = Describe("Setting Kubegres spec 'scheduler.affinity'", func() {
 		test.resourceRetriever = util2.CreateTestResourceRetriever(k8sClientTest, namespace)
 		test.resourceCreator = util2.CreateTestResourceCreator(k8sClientTest, test.resourceRetriever, namespace)
 		test.dbQueryTestCases = testcases.InitDbQueryTestCases(test.resourceCreator, resourceConfigs2.KubegresResourceName)
+
+		// Initialize the event recorder
+		test.eventRecorder = util2.GetTestEventRecorder(util2.K8sClient)
 	})
 
 	AfterEach(func() {
@@ -131,6 +134,7 @@ type SpecAffinityTest struct {
 	dbQueryTestCases                testcases.DbQueryTestCases
 	resourceCreator                 util2.TestResourceCreator
 	resourceRetriever               util2.TestResourceRetriever
+	eventRecorder                   *util2.TestEventRecorder
 }
 
 func (r *SpecAffinityTest) givenDefaultAffinity() *v12.Affinity {
@@ -259,7 +263,7 @@ func (r *SpecAffinityTest) thenEventShouldBeLoggedSayingAffinityIsSetToDefaultVa
 		if err != nil {
 			return false
 		}
-		return eventRecorderTest.CheckEventExist(expectedErrorEvent)
+		return r.eventRecorder.CheckEventExist(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }

@@ -61,7 +61,7 @@ func (k *KindCluster) Create() error {
 	cmd := exec.Command("kind", "create", "cluster",
 		"--name", k.Name,
 		"--kubeconfig", k.KubeConfigPath)
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to create kind cluster: %w, output: %s", err, string(output))
@@ -104,7 +104,7 @@ func (k *KindCluster) Exists() bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 

@@ -18,14 +18,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package test
+package util
 
-import (
-	"testing"
-)
+// Common utilities for tests
 
-// TestInit is a simple test to verify initialization is working
-func TestInit(t *testing.T) {
-	// Skip this test for now as it's just a placeholder
-	t.Skip("This is a placeholder test")
-}
+// This file ensures no global eventRecorderTest variable exists

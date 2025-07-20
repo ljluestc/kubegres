@@ -22,22 +22,35 @@ package util
 
 import (
 	"context"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubegresv1 "reactive-tech.io/kubegres/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// CreateTestClient creates a test client with a fake clientset for testing
-func CreateTestClient() K8sClientType {
+// SetupTestClient sets up the global K8sClient with a fake client for testing
+func SetupTestClient() {
 	s := scheme.Scheme
 	_ = kubegresv1.AddToScheme(s)
 	_ = v1.AddToScheme(s)
 
 	client := fake.NewClientBuilder().WithScheme(s).Build()
 
-	return K8sClientType{
-		Client: client,
-		Ctx:    context.Background(),
+	K8sClient = K8sClientType{
+		Client:   client,
+		Ctx:      context.Background(),
+		Recorder: &TestEventRecorder{Events: []EventRecord{}},
 	}
 }
+
+// K8sClientType represents a Kubernetes client for testing
+type K8sClientType struct {
+	Client   client.Client
+	Ctx      context.Context
+	Recorder *TestEventRecorder
+}
+
+// K8sClient is available for tests
+var K8sClient K8sClientType

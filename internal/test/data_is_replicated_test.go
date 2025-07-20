@@ -28,9 +28,12 @@ import (
 	postgresv1 "reactive-tech.io/kubegres/api/v1"
 	resourceConfigs2 "reactive-tech.io/kubegres/internal/test/resourceConfigs"
 	util2 "reactive-tech.io/kubegres/internal/test/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"time"
 )
+
+var k8sClientTest client.Client
 
 var _ = Describe("Checking changes in Primary DB is replicated in Replica DBs", func() {
 
