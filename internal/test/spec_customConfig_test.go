@@ -37,16 +37,10 @@ import (
 	"time"
 )
 
-type SpecCustomConfigTest struct {
-	resourceCreator   util2.TestResourceCreator
-	resourceRetriever util2.TestResourceRetriever
-	dbQueryTestCases  testcases.DbQueryTestCases
-	eventRecorder     record.EventRecorder
-}
+// SpecCustomConfigTest holds test configuration and state
+var test SpecCustomConfigTest
 
 var _ = Describe("Setting Kubegres specs 'customConfig'", func() {
-
-	var test = SpecCustomConfigTest{}
 
 	BeforeEach(func() {
 		//Skip("Temporarily skipping test")
@@ -307,12 +301,9 @@ var _ = Describe("Setting Kubegres specs 'customConfig'", func() {
 
 })
 
-type SpecCustomConfigTest struct {
-	kubegresResource  *postgresv1.Kubegres
-	dbQueryTestCases  testcases.DbQueryTestCases
-	resourceCreator   util2.TestResourceCreator
-	resourceRetriever util2.TestResourceRetriever
-	eventRecorder     *util2.TestEventRecorder
+// Add kubegresResource field to the existing SpecCustomConfigTest struct
+var _ struct {
+	kubegresResource *postgresv1.Kubegres
 }
 
 func (r *SpecCustomConfigTest) givenNewKubegresSpecIsSetTo(customConfig string, specNbreReplicas int32) {
@@ -323,7 +314,7 @@ func (r *SpecCustomConfigTest) givenNewKubegresSpecIsSetTo(customConfig string, 
 
 func (r *SpecCustomConfigTest) givenExistingKubegresSpecIsSetTo(customConfig string) {
 	var err error
-	r.kubegresResource, err = r.resourceRetriever.GetKubegres()
+	kubegresResource, err := r.resourceRetriever.GetKubegres()
 
 	if err != nil {
 		log.Println("Error while getting Kubegres resource : ", err)
@@ -331,6 +322,7 @@ func (r *SpecCustomConfigTest) givenExistingKubegresSpecIsSetTo(customConfig str
 		return
 	}
 
+	r.kubegresResource = kubegresResource
 	r.kubegresResource.Spec.CustomConfig = customConfig
 }
 
@@ -365,7 +357,7 @@ func (r *SpecCustomConfigTest) thenErrorEventShouldBeLogged() {
 		if err != nil {
 			return false
 		}
-		return r.resourceRetriever.CheckEventExists(expectedErrorEvent)
+		return r.resourceRetriever.CheckEventExist(expectedErrorEvent)
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
 }
@@ -391,6 +383,7 @@ func (r *SpecCustomConfigTest) thenPodsStatesShouldBe(nbrePrimary, nbreReplicas 
 		return false
 
 	}, resourceConfigs2.TestTimeout, resourceConfigs2.TestRetryInterval).Should(BeTrue())
+	kubegresResource * postgresv1.Kubegres
 }
 
 func (r *SpecCustomConfigTest) thenPodsShouldNotContainsCustomConfig() bool {
